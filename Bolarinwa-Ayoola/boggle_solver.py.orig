@@ -1,0 +1,148 @@
+"""
+Name: Bolarinwa Ayoola
+SID: 004002448
+Boggle Solver Program
+"""
+
+class Boggle:
+    """
+    class that represents a boggle game and solver
+    """
+
+    def __init__(self, grid, dictionary):
+        """
+        constructor
+        stores grid and dictionary
+        automatically solves board
+        """
+        self.grid = grid
+        self.dictionary = dictionary
+        self.solutions = []
+        self._solved = False
+        self._solve()
+
+    def setGrid(self, grid):
+        """
+        updates the grid
+        forces re-solve
+        """
+        self.grid = grid
+        self._solved = False
+
+    def setDictionary(self, dictionary):
+        """
+        updates dictionary
+        forces re-solve
+        """
+        self.dictionary = dictionary
+        self._solved = False
+
+    def getSolution(self):
+        """
+        returns list of found words
+        """
+        if not self._solved:
+            self._solve()
+        return self.solutions
+
+    def _solve(self):
+        """
+        main solver function
+        builds prefix set
+        runs dfs from each cell
+        """
+        self.solutions = []
+        self._solved = True
+
+        if not self.grid or not self.dictionary:
+            return
+
+        if len(self.grid) == 0 or len(self.grid[0]) == 0:
+            return
+
+        rows = len(self.grid)
+
+        """
+        normalize dictionary to uppercase
+        """
+        dict_set = set(word.upper() for word in self.dictionary)
+
+        found_words = set()
+
+        """
+        build prefix set for pruning
+        """
+        prefix_set = set()
+        for word in dict_set:
+            for i in range(1, len(word) + 1):
+                prefix_set.add(word[:i])
+
+        """
+        start dfs from each cell
+        """
+        for i in range(rows):
+            for j in range(len(self.grid[i])):
+                visited = []
+                for r in range(rows):
+                    visited.append([False] * len(self.grid[r]))
+
+                self._dfs(i, j, "", visited, dict_set, prefix_set, found_words)
+
+        self.solutions = sorted(list(found_words))
+
+    def _dfs(self, row, col, current_word, visited, dict_set, prefix_set, found_words):
+        """
+        depth first search with backtracking
+        """
+
+        if row < 0 or row >= len(self.grid):
+            return
+
+        if col < 0 or col >= len(self.grid[row]):
+            return
+
+        if visited[row][col]:
+            return
+
+        current_word += self.grid[row][col].upper()
+
+        """
+        stop if not valid prefix
+        """
+        if current_word not in prefix_set:
+            return
+
+        visited[row][col] = True
+
+        if len(current_word) >= 3 and current_word in dict_set:
+            found_words.add(current_word)
+
+        directions = [(-1,-1), (-1,0), (-1,1),
+                      (0,-1),          (0,1),
+                      (1,-1),  (1,0),  (1,1)]
+
+        for dr, dc in directions:
+            self._dfs(row + dr, col + dc, current_word,
+                      visited, dict_set, prefix_set, found_words)
+
+        visited[row][col] = False
+
+
+def main():
+    """
+    test driver
+    """
+
+    grid = [["A", "B", "C", "D"],
+            ["E", "F", "G", "H"],
+            ["IE", "J", "K", "L"],
+            ["A", "B", "C", "D"]]
+
+    dictionary = ["ABEF", "AFJIEEB", "DGKD", "DGKA"]
+
+    mygame = Boggle(grid, dictionary)
+    print(mygame.getSolution())
+
+
+if __name__ == "__main__":
+    main()
