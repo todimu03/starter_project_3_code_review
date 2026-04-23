@@ -1,0 +1,259 @@
+class Boggle:
+
+    """
+Boggle game solver class.
+
+    This class handles the logic for solving a Boggle board. Given a 2D grid
+    of letters and a dictionary, it finds all valid words that can be formed
+    by moving to adjacent tiles without reusing letters.
+
+    """
+
+    def __init__(self, grid, dictionary):
+        """
+        Initialize the Boggle solver.
+
+        Args:
+             grid: 2D list of letters on the board
+             dictionary: List of words to search for
+
+        """
+        self.grid = None
+        self.dictionary = None
+        self.prefixes = set()
+        self.solution_words = []
+
+        self.setGrid(grid)
+        self.setDictionary(dictionary)
+
+        if self.grid is not None and self.dictionary is not None:
+            self._solve()
+
+    def setGrid(self, grid):
+        """
+        Set and validate the game grid.
+
+        Args:
+            grid: grid: 2D list of letters on the board
+        """
+        if not self._validateGrid(grid):
+            self.grid = None
+            return
+
+        self.grid = grid
+
+    def setDictionary(self, dictionary):
+        """
+        Set and validate the dictionary.
+
+        Args:
+            dictionary: List of words to search for
+        """
+        if not self._validateDictionary(dictionary):
+            self.dictionary = None
+            return
+
+        # Store words in uppercase set for fast lookup.
+
+        self.dictionary = set(word.upper() for word in dictionary)
+
+        # Build a prefix set for pruning - this dramatically speeds up DFS
+        self.prefixes = set()
+        for word in self.dictionary:
+            for i in range(1, len(word) + 1):
+                self.prefixes.add(word[:i])
+
+    def getSolution(self):
+        """
+        Get the list of found words.
+
+        Returns:
+            Array of found words, or empty array if no words found or error
+        """
+        return self.solution_words
+
+    def solution(self):
+        """
+        Alias for getSolution() to match the example in the assignment.
+
+        Returns:
+            Array of found words, or empty array if no words found or error
+        """
+        return self.getSolution()
+
+    def _validateGrid(self, grid):
+        """
+        Validate that the grid is a proper 2D array.
+
+        Args:
+            grid: 2D array to validate
+
+        Returns:
+            True if valid, False otherwise
+        """
+        if not grid or not isinstance(grid, list):
+            return False
+
+        if len(grid) == 0:
+            return False
+
+        # Check that all rows have the same length
+        row_length = len(grid[0])
+        for row in grid:
+            if not isinstance(row, list) or len(row) != row_length:
+                return False
+
+            # Check that all elements are strings
+            for cell in row:
+                if not isinstance(cell, str):
+                    return False
+
+        return True
+
+    def _validateDictionary(self, dictionary):
+        """
+        Validate that the dictionary is a proper list of strings.
+
+        Args:
+            dictionary: List to validate
+
+        Returns:
+            True if valid, False otherwise
+        """
+        if not dictionary or not isinstance(dictionary, list):
+            return False
+
+        for word in dictionary:
+            if not isinstance(word, str):
+                return False
+
+        return True
+
+    def _expandTile(self, tile):
+        """
+        Expand special tiles (Qu, St, Ie) to their full letter representation.
+
+        Args:
+            tile: String representing a tile
+
+        Returns:
+            Expanded string (e.g., "Qu" -> "QU", "St" -> "ST", "Ie" -> "IE")
+        """
+        tile_upper = tile.upper()
+
+        if tile_upper == "QU":
+            return "QU"
+        elif tile_upper == "ST":
+            return "ST"
+        elif tile_upper == "IE":
+            return "IE"
+        else:
+            return tile_upper
+
+    def _getNeighbors(self, row, col, rows, cols):
+        """
+        Return all neighboring cell positions (including diagonals).
+
+        Args:
+            row: Current row position
+            col: Current column position
+            rows: Total number of rows in grid
+            cols: Total number of columns in grid
+
+        Returns:
+            List of (row, col) tuples representing valid neighbors
+        """
+        neighbors = []
+
+        # Check all 8 directions (including diagonals)
+        for dr in [-1, 0, 1]:
+            for dc in [-1, 0, 1]:
+                if dr == 0 and dc == 0:
+                    continue
+
+                new_row = row + dr
+                new_col = col + dc
+
+                if 0 <= new_row < rows and 0 <= new_col < cols:
+                    neighbors.append((new_row, new_col))
+
+        return neighbors
+
+    def _dfs(self, row, col, current_word, visited, rows, cols):
+        """
+      DFS to find valid words from a given cell.
+
+        Args:
+            row: Current row position
+            col: Current column position
+            current_word: Word built so far
+            visited: Set of (row, col) tuples that have been used
+            rows: Total number of rows in grid
+            cols: Total number of columns in grid
+        """
+        # Get the current tile and expand it
+        tile = self._expandTile(self.grid[row][col])
+        new_word = current_word + tile
+
+        # If this prefix doesn't exist in any dictionary word, stop
+        if new_word not in self.prefixes:
+            return
+
+        # Check if this word is in dictionary and meets minimum length
+        if len(new_word) >= 3 and new_word in self.dictionary:
+            if new_word not in self.solution_words:
+                self.solution_words.append(new_word)
+
+        # Get all valid neighbors
+        neighbors = self._getNeighbors(row, col, rows, cols)
+
+        for next_row, next_col in neighbors:
+            if (next_row, next_col) not in visited:
+                # Mark as visited
+                visited.add((next_row, next_col))
+
+                # Recurse
+                self._dfs(next_row, next_col, new_word, visited, rows, cols)
+
+                # Backtrack
+                visited.remove((next_row, next_col))
+
+    def _solve(self):
+        """
+        Solve the Boggle puzzle by finding all valid words in the grid.
+        """
+        if self.grid is None or self.dictionary is None:
+            self.solution_words = []
+            return
+
+        self.solution_words = []
+        rows = len(self.grid)
+        cols = len(self.grid[0])
+
+        # Try starting from each cell in the grid
+        for row in range(rows):
+            for col in range(cols):
+                visited = set()
+                visited.add((row, col))
+                self._dfs(row, col, "", visited, rows, cols)
+
+
+def main():
+    """
+    Main function to demonstrate the Boggle solver.
+    """
+    grid = [
+        ["A", "B", "C", "D"],
+        ["E", "F", "G", "H"],
+        ["IE", "J", "K", "L"],
+        ["A", "B", "C", "D"],
+    ]
+
+    dictionary = ["ABEF", "AFJIEEB", "DGKD", "DGKA"]
+
+    mygame = Boggle(grid, dictionary)
+    print(mygame.solution())
+
+
+if __name__ == "__main__":
+    main()
