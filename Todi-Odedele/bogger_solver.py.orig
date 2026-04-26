@@ -1,32 +1,32 @@
  class Boggle:
 
-    # Constructor that initializes the grid, dictionary, and solutions list
+    
     def __init__(self, grid, dictionary):
         self.grid = grid
         self.dictionary = dictionary
         self.solutions = []
 
-    # setter methods for grid and dictionary
+    
     def setGrid(self, grid):
         self.grid = grid
 
     def setDictionary(self, dictionary):
         self.dictionary = dictionary
 
-    # Boggle method, has to be called specifically, unlike the constructor
+   
     def Boggle(self, grid, dictionary):
         self.setGrid(grid)
         self.setDictionary(dictionary)
 
     def getSolution(self):
-        # if the grid is empty
+       
         if not self.grid:
             return []
-        # if the dictionary is empty
+       
         if not self.dictionary:
             return []
         
-        # formats the grid and dictionary 
+        
         format_grid = self.format_grid(self.grid)
         size = len(format_grid)
 
@@ -43,7 +43,7 @@
         visited = [[False] * size for i in range(size)]
         solutions = set()
 
-        # loops through each cell in the grid
+        
         for y in range(size):
             for x in range(size):
                 self.find_all_words(y, x, format_grid, words_set, prefix_set, "", visited, solutions)
@@ -51,8 +51,7 @@
         self.solutions = sorted(solutions)
         return self.solutions
 
-    # helper methods for formatting grid and dictionary
-    @staticmethod
+    
     def format_grid(grid):
         return [[str(cell).strip().upper() for cell in row] for row in grid]
 
@@ -60,7 +59,7 @@
     def format_dictionary(dictionary):
         return {word.strip().upper() for word in dictionary if isinstance(word, str) and word.strip()}
 
-    # helper method to create sets of words and prefixes
+ 
     def prefix_sets(self, words):
         words_set = set()
         prefix_set = set()
@@ -70,7 +69,7 @@
                 prefix_set.add(word[:i])
         return words_set, prefix_set
 
-    # finds all valid words starting from a given cell
+   
     def find_all_words(self, y, x, grid, words_set, prefix_set, word, visited, solutions):
         if visited[y][x]:  # Base case: can't reuse the same tile in the current path
             return
@@ -93,9 +92,7 @@
 
         visited[y][x] = False
 
-    # helper method to calculate neighboring cells according to Boggle rules
-    @staticmethod
-    def neighboring_cells(y, x, size):
+    
         neighbors = []
         # loops through all possible directions
         for dy in (-1, 0, 1):
